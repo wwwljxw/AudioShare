@@ -57,7 +57,7 @@
 | `src/AudioShare.Core/SettingsStore.cs` | 设置持久化 + autostart + 音调/分析工具 | XDG 路径；`FrameMs`；`Autostart`(XDG)；`ToneGenerator`(Goertzel/RMS) |
 | `src/AudioShare.Core/Logger.cs` | 日志 / 进程执行 / 流读取扩展 | 日志落 `~/.local/state/AudioShare/audioshare.log` |
 | `src/AudioShare.Cli/` | 自检与诊断 CLI | `Program.cs`（命令分发）、`SelfTests.cs`（11 项断言）、`TestTcpServer.cs`（**按安卓语义**的模拟接收端）、`ProtocolVerifier.cs`（**独立重写**的解析器）、`TestHarness.cs` |
-| `src/AudioShare.Gui/` | Avalonia GUI | `MainWindow.axaml(.cs)` 窗口/托盘/单实例/透明；`MainView.axaml(.cs)` 全部控件与事件；`MainWindowViewModel.cs`；`ViewModel.cs`（RelayCommand/SpeakerRow）；`SingleInstance.cs`；`ScreenshotHost.cs`（无头截图自检） |
+| `src/AudioShare.Gui/` | Avalonia GUI | `MainWindow.axaml(.cs)` 窗口/唯一自绘标题栏/拖动/托盘/单实例/DPI 诊断；`MainView.axaml(.cs)` 精简布局（单一刷新、连接断开合并、双击设备行开管理页）；`MainWindowViewModel.cs`；`ViewModel.cs`（RelayCommand/SpeakerRow）；`SingleInstance.cs`；`ScreenshotHost.cs`（无头截图自检） |
 | `docs/gui-screenshot.png` | 界面截图（真实可视树渲染） | 由 `--screenshot` 生成 |
 | `docs/evidence/` | **原始证据固化**（见 §10） | 自检日志、真机 logcat、4 分钟/3 分钟长测日志 |
 
@@ -285,7 +285,7 @@ adb -s 192.168.8.4:5555 logcat -d -T "$(date '+%m-%d %H:%M:%S.000')" -s AudioSha
 | --- | --- |
 | 发现阈值偏离上游 | 有意的偏离（64 vs 26），依据是安卓端报文 30 字节。若上游未来改回小报文，本实现仍兼容（阈值更宽松）。 |
 | 帧长 100 ms | 基于**斐讯 R1** 实测；其他机型（性能更好的手机）可能能吃下更小帧长。已做成可配置。 |
-| Wayland 透明 | 本机只能到 `Transparent` 档，无真模糊；不影响功能。 |
+| 窗口透明 | **1.7.19 已按用户要求删除**（窗口固定为主题不透明背景），不再存在合成器兼容问题。 |
 | 托盘图标 | 依赖桌面环境的 StatusNotifier/AppIndicator 支持；本机日志确认 `tray icon created`，但**托盘点击唤出未实操**。 |
 | USB 模式 | 机制已验证（adb forward 建立/撤销），物理线未验证。 |
 | 环境 | 无 root：不能装系统包、不能改系统音频配置；`~/.dotnet` 为用户态 SDK，换机器需重装或改用系统 dotnet。 |

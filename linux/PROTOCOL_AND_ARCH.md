@@ -248,7 +248,7 @@ Linux 端必须额外过滤容器/虚拟网络，仅对真实物理局域网网�
 | 项 | Windows | Linux 对应 |
 | --- | --- | --- |
 | 配置文件 | `%AppData%\AudioShare\audio.share.config.json`（`windows/Settings.cs:36-49`） | `$XDG_CONFIG_HOME/AudioShare/audio.share.config.json`（默认 `~/.config/AudioShare/`） |
-| 字段 | `AudioId, AdbDevices[], IPDevices[], SampleRate=48000, Volume=50, IsUSB=true, VolumeFollowSystem=true, Acrylic=true`（`windows/Settings.cs:16-31`） | 同名同义（`Acrylic` 在 Linux 映射为窗口透明/毛玻璃开关并标注"重启后生效"） |
+| 字段 | `AudioId, AdbDevices[], IPDevices[], SampleRate=48000, Volume=50, IsUSB=true, VolumeFollowSystem=true, Acrylic=true`（`windows/Settings.cs:16-31`） | 同名同义（`Acrylic` 字段保留以兼容旧配置；**1.7.19 起窗口透明功能已删除**，无对应 UI） |
 | 设备项 | `{ Id, Channel }`（`windows/Settings.cs:9-19`） | 相同 |
 | 启动自动连接 | `MainWindow_Loaded`：对 `Channel != None` 的未连接设备自动连接；全部成功则隐藏窗口（`windows/MainWindow.xaml.cs:194-226`） | 相同 |
 | 单实例 | 命名互斥 `_AUDIO_SHARE_MUTEX` + 命名管道 `_AUDIO_SHARE_PIPE` 唤醒已有实例（`windows/App.xaml.cs:12-30`、`windows/MainWindow.xaml.cs:111-127`） | Unix domain socket（`$XDG_RUNTIME_DIR/audioshare.sock`）+ 文件锁，语义相同 |
@@ -260,11 +260,15 @@ Linux 端必须额外过滤容器/虚拟网络，仅对真实物理局域网网�
 
 ## 10. Windows UI 元素 → Linux GUI 对照
 
+> 注：下表为协议审计时（1.7.9）的对照。1.7.18/1.7.19 之后界面有精简：
+> 窗口透明开关删除、刷新合并、连接/断开合并、管理页改为双击设备行、底部退出按钮删除（托盘退出）。
+> 协议与功能语义不变。
+
 | # | `windows/MainWindow.xaml` 元素（行号） | 绑定/行为 | `linux/` 实现 |
 | --- | --- | --- | --- |
 | 1 | `ui:TitleBar`（:22-24）标题 `{Binding Title}`、图标 | 标题 = 语言文本 + 版本号 | Avalonia 自绘标题栏 + 标题/版本 |
 | 2 | `startup` ToggleSwitch（:27-28） | `IsStartup`（开机启动 .lnk） | XDG autostart `.desktop`（`~/.config/autostart/`） |
-| 3 | `windowAcrylic` ToggleSwitch（:29-37，仅老版本 Windows 可见） | `AcrylicVisible/ Acrylic` | Linux 映射为窗口透明开关（默认隐藏或固定可见，标注重启后生效） |
+| 3 | `windowAcrylic` ToggleSwitch（:29-37，仅老版本 Windows 可见） | `AcrylicVisible/ Acrylic` | ~~Linux 映射为窗口透明开关~~（**1.7.19 已删除该功能**，窗口固定不透明） |
 | 4 | 状态圆点 + `connected/unconnected + ConnectedCount`（:39-55） | 绿/红点 + 计数 | 同布局同语义 |
 | 5 | `audioDeviceSelection` ComboBox `AudioDevices/AudioSelected`（:58-62） | 采集设备枚举 | 输出设备 → `.monitor` 源列表（`pactl`/native 枚举） |
 | 6 | 采样率 ComboBox `SampleRates/SampleRate`（:63-65） | 7 档 | 相同 7 档；非 48k 用重采样 |
@@ -289,7 +293,7 @@ Linux 端必须额外过滤容器/虚拟网络，仅对真实物理局域网网�
 | R2 | 帧长必须 4 字节对齐 | 静音帧与抽取帧均按 4 字节倍数生成 | `android/.../TcpService.java:449-458` |
 | R3 | Android 侧 buffer 扩容逻辑 | 单帧 ≤ `getMinBufferSize` 量级（保守取 10-40 ms） | `android/.../TcpService.java:215-219,455-457` |
 | R4 | Android 每 10 s 写 1 字节心跳 | Linux 端保持读循环，避免对端写阻塞 | `android/.../TcpService.java:582-599` |
-| R5 | 发现端口不确定（Windows 端只监听最后一个成功端口） | Linux 端**同时绑定 58261-58270**，过滤条件保持 `≤26 字节` | §7.1；`windows/Model.cs:65-94` |
+| R5 | 发现端口不确定（Windows 端只监听最后一个成功端口） | Linux 端**同时绑定 58261-58270**；报文长度阈值**放宽到 64 字节**（安卓自 `5c06bac` 起报文恒为 30 字节，原版 `>26` 会丢弃全部广播） | §7.1；`windows/Model.cs:65-94` |
 | R6 | 非 48 kHz 采样率 | 需重采样（PulseAudio 侧可直接请求目标采样率，由服务端重采样） | §2 |
 | R7 | 采集设备切换/拔出 | 监听 monitor 源变化，失败时重建流并按原设置重连 | `windows/Model.cs:156-177` |
 | R8 | 版本判定字符串 | APK 判定比较 `1.7.9`（`Major.Minor.Build`） | `windows/Utils.cs:23-31`、`android/app/build.gradle:14` |
@@ -299,7 +303,7 @@ Linux 端必须额外过滤容器/虚拟网络，仅对真实物理局域网网�
 
 ## 12. 未确证项（明确标注）
 
-1. `AudioManager` 采集回调的实际帧大小（NAudio 默认值随设备缓冲变化）——Linux 端自定为 10 ms 帧（480 采样 × 2ch × 2B = 1920 B）并以测试验证。
+1. `AudioManager` 采集回调的实际帧大小（NAudio 默认值随设备缓冲变化）——Linux 端**默认定 100 ms 帧（19200 B）**，由真机校准确定：10/20/50 ms 会在斐讯 R1 上大量触发 `write audio busy` 丢帧，100 ms 时约 0.1 次/秒（见 `HANDOVER.md` §6 陷阱 3）。
 2. Windows 发现监听只保留单一端口（`windows/Model.cs:65-77`）与发送端多端口投递之间的实际匹配关系，未经真机验证；Linux 端采用更稳的多端口绑定。
 3. Android 端 `AudioTrack.write` 的 `bufferSizeInBytes` 与 PC 帧长的最优匹配关系未做真机压测。
 4. `BROADCAST_ADDRESS_V6 = "FF02::1"` 是否在其它分支使用：当前源码未见发送路径使用 IPv6 广播。

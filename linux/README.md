@@ -22,7 +22,7 @@
 | USB 模式 | 调用系统 `adb` 枚举设备，`adb forward tcp:<空闲端口> localabstract:picapico-audio-share` 后连接 |
 | APK 自动安装/拉起 | 连接前比对 `dumpsys package ...versionName`；不匹配则 `adb push` + `pm uninstall` + `pm install -r` + `dumpsys deviceidle whitelist`，再 `am start -W -n com.picapico.audioshare/.MainActivity`（与 `windows/Speaker.cs:337-386` 同序列） |
 | 音量 | 手动音量 + 跟随系统（读取默认输出音量并下发 `Volume(2)` 指令） |
-| 远程管理页 | 设备行"打开管理页"按钮，用 `xdg-open` 打开安卓端 `http://<ip>:<端口>`（默认 8080，斐讯 R1 为 8090） |
+| 远程管理页 | **双击设备行**，用 `xdg-open` 打开安卓端 `http://<ip>:<端口>`（默认 8080，斐讯 R1 为 8090） |
 | 托盘与单实例 | 关闭窗口即最小化到托盘（音频转发不中断）；托盘菜单"显示窗口/退出"；再次启动会唤醒已有实例（Unix socket） |
 | 网卡过滤 | 只对真实物理局域网网卡工作，自动排除 `lo`、`docker*`、`veth*`、`br-*`、`tun*`、`tailscale*`、`wg*` 等虚拟/隧道网卡 |
 
@@ -74,13 +74,14 @@ dotnet build AudioShare.Linux.sln -c Release -warnaserror     # 0 error / 0 warn
 ## 3. 使用
 
 1. 启动 `audioshare`；窗口右上角是连接状态（绿点=已连接并显示设备数，红点=未连接）。
-2. 选择"音频设备"= 要分享的输出设备（列表项即该设备的 `.monitor`，默认项表示 `@DEFAULT_MONITOR@`），必要时切换采样率并点"刷新"。
+2. 选择"音频设备"= 要分享的输出设备（列表项即该设备的 `.monitor`，默认项表示 `@DEFAULT_MONITOR@`），必要时切换采样率。
+   界面只有一个"刷新"按钮：一次同时刷新音频设备与播放设备列表。
 3. 选择连接方式：
-   - **USB**：打开 USB 开关 → 点"刷新"→ 下拉列表出现设备 → 选择声道模式 → "连接"。首次连接会自动安装并拉起 APK（需 `AudioShare.apk`，见下节）。
+   - **USB**：打开 USB 开关 → 点"刷新"（与音频刷新共用一个按钮）→ 下拉列表出现设备 → 选择声道模式 → "连接"。首次连接会自动安装并拉起 APK（需 `AudioShare.apk`，见下节）。
    - **Wi-Fi**：关闭 USB 开关 → 局域网内已运行 AudioShare 的设备会被自动发现并出现在列表中（也可以手输 `IP` 或 `IP:端口` 后点"添加 IP"）→ 选择声道 → "连接"。
 4. 想用两台设备分别放左右声道：给设备 A 选"左声道"、设备 B 选"右声道"，各自点"连接"。
-5. "打开管理页"按钮可用 `xdg-open` 打开安卓端的 Musiche 远程管理页。
-6. 关闭窗口＝最小化到托盘，转发继续；托盘菜单"退出"才真正结束进程。
+5. **双击设备行**可用 `xdg-open` 打开安卓端的 Musiche 远程管理页。
+6. 标题栏 ✕ ＝最小化到托盘，转发继续；**退出程序请用托盘菜单"退出"**（界面不再有单独的退出按钮）。
 
 ### APK 位置
 
@@ -108,7 +109,7 @@ dotnet run --project src/AudioShare.Cli -c Release -- download-apk --output ./Au
 
 | 路径 | 内容 |
 | --- | --- |
-| `~/.config/AudioShare/audio.share.config.json` | 采集设备、设备列表与声道、采样率、音量、是否 USB、跟随系统、窗口透明 |
+| `~/.config/AudioShare/audio.share.config.json` | 采集设备、设备列表与声道、采样率、音量、是否 USB、跟随系统 |
 | `~/.config/autostart/audioshare.desktop` | 勾选"开机启动"后生成 |
 | `~/.local/state/AudioShare/audioshare.log` | 运行日志（含每条 adb 命令行与退出码） |
 | `$XDG_RUNTIME_DIR/audioshare.sock` | 单实例唤醒用的 Unix socket |
