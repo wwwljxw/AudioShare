@@ -304,11 +304,18 @@ git status --short        # 未提交时：?? linux/ 与 ?? .pi/（后者是宿�
   ```bash
   git add linux && git commit -m "Add native Linux client (Avalonia + PulseAudio/PipeWire, no Wine)"
   ```
-- 远端 `origin = https://github.com/HeHang0/AudioShare.git`。**本机没有 credential helper、
-  没有 `~/.git-credentials`、也没有 SSH 私钥**（SSH 还会被本机代理拦截）：
-  push 需要 GitHub 用户名 + Personal Access Token，或改由用户在终端手动推送。
-- 本机 git 未配置 `user.name/user.email`，首次提交前必须指定（可在命令行用
-  `git -c user.name=... -c user.email=... commit` 临时指定，不改全局配置）。
+- 远端 `origin = https://github.com/HeHang0/AudioShare.git` 是上游，账号 `wwwljxw` 对 it 只有 READ 权限。
+  **代码已 fork 并推送到 `https://github.com/wwwljxw/AudioShare`（commit `64c5de6`，分支 master）**。
+- 本机 git 未配置 `user.name/user.email`，提交时用命令行临时指定（不改全局配置）：
+  ```bash
+  git -c user.name="wwwljxw" -c user.email="57058161+wwwljxw@users.noreply.github.com" commit -m "..."
+  ```
+- 推送（`gh` 已登录 `wwwljxw`，token 含 repo 权限；**不要直接从 origin push**）：
+  ```bash
+  export PATH="$HOME/.local/bin:$PATH"
+  git -c credential.helper='!gh auth git-credential' push \
+      https://github.com/wwwljxw/AudioShare.git master
+  ```
 - 若要让分发包可下载：把 `dist/*.deb`、`dist/*.tar.gz` 作为 Release 资产上传（不入库）。
 
 ---
